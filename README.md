@@ -65,3 +65,21 @@ Also note that support for other *current* operating systems (typically, other L
 
 See [THIRD-PARTY.md](THIRD-PARTY.md) for license information about portions of Open RV that have been imported from other projects.
 
+## Google Chat bot domain-wide deployment
+
+The repository includes a simple Google Chat bot located in
+`scripts/google_chat_bot.py`. To make the bot available for every user in your
+Google Workspace domain, deploy it and install the associated Chat app
+domain-wide:
+
+1. Create a Google Cloud project and enable the **Google Chat API**, **Cloud
+   Run**, and **Cloud Storage** services.
+2. Deploy `scripts/google_chat_bot.py` to a publicly accessible service such as
+   Cloud Run. Set the `PUBLIC_URL` environment variable to the service's base
+   URL and configure the Chat API to use `<PUBLIC_URL>/chat` for events.
+3. In the Google Workspace Admin console open **Apps → Google Workspace → Chat
+   apps** and add your new Chat app.
+4. Choose **Install for everyone** to deploy the bot across the entire domain.
+   Users can now mention **@OpenRV Bot** in any space to get the upload card or
+   upload sequences directly.
+
