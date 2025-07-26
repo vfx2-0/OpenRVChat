@@ -90,6 +90,13 @@ rv-packages/rv-nuke-integration
 rv-packages/rv-otio-reader
 ```
 
+```{toctree}
+:maxdepth: 1
+:hidden:
+:caption: Integration Examples
+google_chat_app
+```
+
 Open RV and its companion tools, RVIO and RVLS, have been created to support digital artists, directors, supervisors, and production crews who need reliable, flexible, high-performance tools to review image sequences, movie files, and audio. RV is clean and simple in appearance and has been designed to let users load, play, inspect, navigate and edit image sequences and audio as simply and directly as possible. RV's advanced features do not clutter its appearance but are available through a rich command-line interface, extensive hot keys and key-chords, and smart drag/drop targets. RV can be extensively customized for integration into proprietary pipelines. The RV Reference Manual has information about RV customization.
 
 % TODO: This needs to be toughened up eventually. The goal for now is to push Open RV documentation to ReadTheDocs.
