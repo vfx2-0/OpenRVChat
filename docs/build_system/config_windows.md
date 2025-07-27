@@ -8,9 +8,84 @@
     1. [Copy python.exe and rename it to python3.exe](copy_python3)
 4. [Install CMake](install_cmake)
 5. [Install Qt](install_windows_qt)
-6. [Install Strawberry Perl](install_strawberry_perl)
-7. [Install MSYS2](install_msys2)
-    1. [Install required MSYS2 pacman packages (from an MSYS2-MinGW64 shell)](install_msys2_packages)
+6. Install Strawberry Perl
+
+🍓 Method 1: Install via Official Installer (Recommended)
+    Go to the official site:
+    https://strawberryperl.com
+    
+    Download the installer:
+    Choose the version that matches your system architecture:
+    
+    For most users: 64-bit version (recommended)
+    
+    For older machines: 32-bit version
+    
+    Run the installer:
+    
+    Accept default settings (it adds Perl to your PATH)
+    
+    Installation directory is typically C:\Strawberry
+    
+    Verify the installation:
+    Open PowerShell or CMD and run:
+    
+    perl -v
+    
+    You should see something like:
+    
+    This is perl 5, version 40, subversion 2 (v5.40.2)
+7. Install MSYS2
+    1. Install required MSYS2 pacman packages (from an MSYS2-MinGW64 shell)(install_msys2_packages)
+
+        ✅ Step 1: Install MSYS2
+        Download the MSYS2 installer from the official site:
+        https://www.msys2.org
+        
+        Run the installer
+        
+        Choose the default install path (e.g. C:\msys64)
+        
+        Let it finish, but do not open the MSYS2 shell immediately after install
+        
+        Update MSYS2 core packages
+        Open MSYS2 MSYS from the Start Menu and run:
+        
+        pacman -Syu
+        If it asks to close the terminal and restart, do so
+        
+        Then run:
+        
+        pacman -Su
+        ✅ Step 2: Install Required MSYS2 pacman Packages
+        Open the MSYS2 MinGW64 shell from Start Menu:
+        
+        Look for "MSYS2 MinGW 64-bit"
+        
+        Install packages (example set for vcpkg/Qt usage):
+        
+    
+        pacman -S --needed base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake \
+          mingw-w64-x86_64-ninja mingw-w64-x86_64-python3 mingw-w64-x86_64-qt5 \
+          mingw-w64-x86_64-openssl git unzip
+        If you're only building Qt-based projects with vcpkg, the most important are:
+        
+    
+        pacman -S --needed mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake \
+          mingw-w64-x86_64-ninja mingw-w64-x86_64-openssl
+        🧪 Step 3: Confirm It Works
+        Still in the MinGW64 shell, check versions:
+        
+    
+        gcc --version
+        cmake --version
+        ninja --version
+        ⚠️ Notes
+        You must always use the correct shell (MinGW64) when building tools that require it.
+        
+        You may want to add C:\msys64\usr\bin to your system PATH for easier pacman access from any terminal.
+
+
 8. [Setup environment variables](setup_env)
 9. [Build Open RV](build_windows_openrv)
 
