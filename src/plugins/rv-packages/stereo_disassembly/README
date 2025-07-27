@@ -1,3 +1,0 @@
-# To build stereo_disassembly_help.html
-
-asciidoc -a data-uri stereo_autoload_help.asciidoc
