@@ -9,7 +9,8 @@ and quickly open them in OpenRV from a chat room.
 
 * Upload image sequences from a simple web form or by mentioning the bot in
   Google Chat.
-* Automatically generate thumbnails for uploaded sequences.
+* Automatically generate thumbnails for uploaded sequences using
+  time-limited signed URLs so images display correctly in Chat.
 * Open a sequence or multiple sequences directly in a running OpenRV session
   using `rvpush`.
 
@@ -36,7 +37,7 @@ INFO: no output plugins found in C:/Users/lever/AppData/Roaming/RV/Output;C:/Sou
 Install packages with:
 
 ```bash
-pip install flask google-cloud-storage google-api-python-client google-auth pillow
+pip install -r requirements.txt
 ```
 
 ## Configuration
@@ -47,10 +48,16 @@ The bot uses a few environment variables:
   `http://localhost:8080`.
 - `UPLOAD_BUCKET` – Optional name of the GCS bucket used for uploads. If not
   provided, a bucket is created based on the requesting domain.
+- `ALLOWED_DOMAIN` – Optional Workspace domain allowed to use the upload form.
+  If set, upload requests from other domains are rejected.
 - `PORT` – Port number for the Flask server, used when deploying to Cloud Run or other containers. Defaults to `8080`.
 
 Make sure the service account running the bot has access to the bucket and to
-Google Chat APIs.
+Google Chat APIs. Grant it the **Storage Object Admin** role on the bucket and
+the **Chat Bot Service Account** role (`roles/chat.bot`). Use this service
+account when deploying to Cloud Run.
+If `ALLOWED_DOMAIN` is set, the upload form requires users to authenticate with
+an email from that domain.
 
 ## Running
 
@@ -66,7 +73,7 @@ port.
 
 ## Uploading and Viewing Sequences
 
-1. Add the bot to a Google Chat space.
+1. In Google Chat open your space and choose **Add people & bots** to add the bot.
 2. Mention `@OpenRV Bot` in the chat to receive the upload form link.
 3. Upload one or more image sequence files.
 4. Once uploaded, the bot posts thumbnails with buttons to open each sequence in
@@ -81,9 +88,25 @@ upload form served from `/upload_form`.
 
 Feel free to modify or extend the bot to fit your workflow.
 
+## Hosting on Google Cloud Run
+
+The repository includes a `Dockerfile` so the bot can run on Google Cloud Run.
+See [docs/GCP_DEPLOYMENT.md](docs/GCP_DEPLOYMENT.md) for a step-by-step guide to
+build the container, deploy it with Cloud Run, and configure the required
+environment variables. Once deployed, use the service URL when setting up the
+Google Chat application.
+
 
 ## Deploying to Google Workspace Marketplace
 
-A `Dockerfile` and `requirements.txt` are included for running the bot on Google Cloud Run or any platform that can host a Flask application. Build and deploy the container, then configure a Google Chat app in the [Google Workspace Marketplace](https://workspace.google.com/marketplace?host=chat) and set the bot's request URL to `https://YOUR_SERVICE_URL/chat`.
+To make the bot available from the Google Workspace Marketplace:
 
-After the app is published, users can install it from the marketplace and open image sequences in OpenRV directly from Google Chat.
+1. Follow the steps in [docs/GCP_DEPLOYMENT.md](docs/GCP_DEPLOYMENT.md) to deploy the container on Cloud Run.
+2. Enable the Google Chat API in your project.
+3. Create a new Chat app and use the same service account as the Cloud Run service.
+4. Set the event endpoint to `https://YOUR_SERVICE_URL/chat`.
+5. Publish the app to your domain or publicly.
+6. Invite the bot to a space with **Add people & bots**.
+
+After publishing, the bot can be installed from the marketplace and will open uploaded image sequences directly in OpenRV.
+
