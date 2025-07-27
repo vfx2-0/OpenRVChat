@@ -86,7 +86,24 @@
         You may want to add C:\msys64\usr\bin to your system PATH for easier pacman access from any terminal.
 
 
-8. [Setup environment variables](setup_env)
+8. Setup environment variables
+
+    ✅ 1. Add MSYS2 to PATH
+    🛠 Edit Environment Variables:
+    Press Windows + S and search for Environment Variables
+    
+    Click “Edit the system environment variables”
+    
+    Click “Environment Variables…”
+    
+    ➕ Under System Variables or User Variables:
+    Find and edit Path
+    
+    Click New and add the following:
+    
+    C:\msys64\usr\bin
+    C:\msys64\mingw64\bin
+
 9. [Build Open RV](build_windows_openrv)
 
 
