@@ -18,6 +18,17 @@ and quickly open them in OpenRV from a chat room.
 * Python 3.9 or newer.
 * Access to Google Cloud with permission to use Google Chat and Cloud Storage.
 * The `rv` application must be running with networking enabled (`rv -network`).
+Example output on Windows:
+```
+C:\Source\OpenRV\_install\bin>rv -network
+INFO: Using 'C:\Users\lever' for $HOME.
+rv
+Version 2.0.0 (RELEASE), built on Jun  7 2024 at 09:42:59 (HEAD=0ba6a73).
+Copyright Contributors to the Open RV Project
+INFO: listening on port 45124
+INFO: File logger path: C:/Users/lever/AppData/Roaming/ASWF/OpenRV/
+INFO: no output plugins found in C:/Users/lever/AppData/Roaming/RV/Output;C:/Source/OpenRV/_install/plugins/Output
+```
 * The following Python packages:
   `flask`, `google-cloud-storage`, `google-api-python-client`, `google-auth`,
   and `Pillow`.
@@ -36,6 +47,7 @@ The bot uses a few environment variables:
   `http://localhost:8080`.
 - `UPLOAD_BUCKET` – Optional name of the GCS bucket used for uploads. If not
   provided, a bucket is created based on the requesting domain.
+- `PORT` – Port number for the Flask server, used when deploying to Cloud Run or other containers. Defaults to `8080`.
 
 Make sure the service account running the bot has access to the bucket and to
 Google Chat APIs.
@@ -69,3 +81,9 @@ upload form served from `/upload_form`.
 
 Feel free to modify or extend the bot to fit your workflow.
 
+
+## Deploying to Google Workspace Marketplace
+
+A `Dockerfile` and `requirements.txt` are included for running the bot on Google Cloud Run or any platform that can host a Flask application. Build and deploy the container, then configure a Google Chat app in the [Google Workspace Marketplace](https://workspace.google.com/marketplace?host=chat) and set the bot's request URL to `https://YOUR_SERVICE_URL/chat`.
+
+After the app is published, users can install it from the marketplace and open image sequences in OpenRV directly from Google Chat.
