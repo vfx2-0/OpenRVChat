@@ -6,6 +6,7 @@ import subprocess
 import threading
 import time
 import datetime
+import logging
 from pathlib import Path
 from typing import Dict, List
 
@@ -18,10 +19,14 @@ from PIL import Image
 app = Flask(__name__)
 # Flask application used to receive events and serve the upload form
 
+logging.basicConfig(level=logging.INFO)
+
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "http://localhost:8080")
 # Base URL for the web server used in generated links
 # Optional Cloud Storage bucket for uploads
 UPLOAD_BUCKET = os.environ.get("UPLOAD_BUCKET")
+# Restrict uploads to users from this domain if set
+ALLOWED_DOMAIN = os.environ.get("ALLOWED_DOMAIN")
 
 GCS_URL_RE = re.compile(r"^gs://([^/]+)/(.+)$")
 
@@ -124,6 +129,7 @@ def _create_thumbnail(image_path: Path, thumb_path: Path) -> Path:
             img.save(thumb_path)
         return thumb_path
     except Exception:
+        logging.debug("Pillow failed, trying imageio for %s", image_path)
         # Pillow may not support EXR; fall back to imageio if available.
         try:
             import imageio
@@ -137,6 +143,7 @@ def _create_thumbnail(image_path: Path, thumb_path: Path) -> Path:
             img.save(thumb_path)
             return thumb_path
         except Exception as exc:
+            logging.error("Failed to create thumbnail: %s", exc)
             raise RuntimeError(f"Failed to create thumbnail: {exc}") from exc
 
 # Store the thumbnail in Cloud Storage and generate a temporary URL
@@ -168,7 +175,8 @@ def _upload_complete_card(urls: List[str], user: str) -> Dict:
                     "altText": Path(gcs_url).name,
                 }
             }
-        except Exception:
+        except Exception as exc:
+            logging.error("Failed to create thumbnail for %s: %s", gcs_url, exc)
             image_widget = {"textParagraph": {"text": Path(gcs_url).name}}
         widgets.extend(
             [
@@ -238,6 +246,11 @@ def upload():
     target_space = request.form.get("space")
     user_email = request.headers.get("X-Goog-Authenticated-User-Email", "")
     domain = user_email.split("@")[-1] if "@" in user_email else ""
+    if ALLOWED_DOMAIN and domain != ALLOWED_DOMAIN:
+        logging.warning("Upload attempt from unauthorized domain: %s", domain)
+        return "Unauthorized", 403
+    if not user_email:
+        return "Authentication required", 401
     bucket_name = UPLOAD_BUCKET or f"openrv-{domain.replace('.', '-')}"
     client = storage.Client()
     bucket = client.bucket(bucket_name)
@@ -259,9 +272,10 @@ def upload():
         progress_name = progress_msg.get("name")
 
     for idx, f in enumerate(files):
-        blob = bucket.blob(f.filename)
+        blob_name = Path(f.filename).name
+        blob = bucket.blob(blob_name)
         blob.upload_from_file(f)
-        gcs_urls.append(f"gs://{bucket_name}/{f.filename}")
+        gcs_urls.append(f"gs://{bucket_name}/{blob_name}")
         elapsed = time.time() - start
         if target_space and progress_name and elapsed > next_update:
             remaining = max(count - idx - 1, 0)
@@ -275,8 +289,9 @@ def upload():
         try:
             card = _upload_complete_card(gcs_urls, user)
             _patch_message(progress_name, card=card)
-        except Exception:
-            pass
+        except Exception as exc:
+            logging.error("Failed to build completion card: %s", exc)
+            _patch_message(progress_name, text="Upload complete but failed to generate card")
 
     return "Upload successful"
 
@@ -347,6 +362,7 @@ def _handle_message(event: Dict) -> Dict:
         bucket_name, _ = _parse_gcs_url(gcs_url)
         signed_url = _upload_thumbnail(bucket_name, thumb_path)
     except Exception as exc:
+        logging.error("Thumbnail generation failed for %s: %s", gcs_url, exc)
         return {"text": f"Failed to create thumbnail: {exc}"}
 
     card = {
@@ -411,6 +427,7 @@ def _handle_card_click(event: Dict) -> Dict:
         try:
             _download_sequence(gcs_url, workspace)
         except Exception as exc:
+            logging.error("Download failed for %s: %s", gcs_url, exc)
             return {"text": f"Failed to download: {exc}"}
         _launch_openrv(workspace)
         return {"text": "Sequence opened in OpenRV."}
@@ -420,7 +437,8 @@ def _handle_card_click(event: Dict) -> Dict:
         for url in urls.split(","):
             try:
                 _download_sequence(url, workspace)
-            except Exception:
+            except Exception as exc:
+                logging.error("Download failed for %s: %s", url, exc)
                 continue
         _launch_openrv(workspace)
         return {"text": "Sequences opened in OpenRV."}
