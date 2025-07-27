@@ -3,6 +3,7 @@ import re
 import subprocess
 import threading
 import time
+import datetime
 from pathlib import Path
 from typing import Dict, List
 
@@ -127,6 +128,15 @@ def _create_thumbnail(image_path: Path, thumb_path: Path) -> Path:
             raise RuntimeError(f"Failed to create thumbnail: {exc}") from exc
 
 
+def _upload_thumbnail(bucket_name: str, thumb_path: Path) -> str:
+    """Upload a thumbnail to the given bucket and return a signed URL."""
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(f"thumbs/{thumb_path.name}")
+    blob.upload_from_filename(thumb_path.as_posix())
+    return blob.generate_signed_url(expiration=datetime.timedelta(minutes=30))
+
+
 def _upload_complete_card(urls: List[str], user: str) -> Dict:
     workspace = Path("/tmp/upload_thumbs")
     widgets = []
@@ -136,9 +146,11 @@ def _upload_complete_card(urls: List[str], user: str) -> Dict:
         try:
             _download_middle_frame(gcs_url, frame_path)
             _create_thumbnail(frame_path, thumb_path)
+            bucket_name, _ = _parse_gcs_url(gcs_url)
+            signed_url = _upload_thumbnail(bucket_name, thumb_path)
             image_widget = {
                 "image": {
-                    "imageUrl": f"file://{thumb_path}",
+                    "imageUrl": signed_url,
                     "altText": Path(gcs_url).name,
                 }
             }
@@ -314,6 +326,8 @@ def _handle_message(event: Dict) -> Dict:
     try:
         _download_middle_frame(gcs_url, middle_frame)
         _create_thumbnail(middle_frame, thumb_path)
+        bucket_name, _ = _parse_gcs_url(gcs_url)
+        signed_url = _upload_thumbnail(bucket_name, thumb_path)
     except Exception as exc:
         return {"text": f"Failed to create thumbnail: {exc}"}
 
@@ -325,7 +339,7 @@ def _handle_message(event: Dict) -> Dict:
                         "widgets": [
                             {
                                 "image": {
-                                    "imageUrl": f"file://{thumb_path}",
+                                    "imageUrl": signed_url,
                                     "altText": "Sequence Thumbnail",
                                 }
                             },
