@@ -1,0 +1,8 @@
+{
+  "timeZone": "UTC",
+  "chat": {
+    "name": "OpenRV Bot",
+    "description": "Upload image sequences and open them in OpenRV",
+    "avatarUrl": "https://developers.google.com/chat/images/quickstart-app-avatar.png"
+  }
+}

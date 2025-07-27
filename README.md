@@ -88,6 +88,11 @@ upload form served from `/upload_form`.
 
 Feel free to modify or extend the bot to fit your workflow.
 
+## Google Apps Script Version
+
+A simplified Google Apps Script implementation is available in the `apps_script` folder. Create a new project at <https://script.google.com>, copy in `Code.gs`, and replace the default manifest with `appsscript.json`. Deploy the project as a **Chat app**. When the bot is first added to a space it instructs users to download the compiled OpenRV release from the [Google Drive link](https://drive.google.com/file/d/1SFsldpD9mWzKTm9tEKVhW-HwzB8tmC-8/view?usp=sharing) and run `rv -network` from the `bin` folder before interacting with the bot.
+
+
 ## Hosting on Google Cloud Run
 
 The repository includes a `Dockerfile` so the bot can run on Google Cloud Run.
