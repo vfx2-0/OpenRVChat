@@ -254,7 +254,15 @@ def upload():
 
 
 def _launch_openrv(sequence_dir: Path):
-    subprocess.Popen(["rv", str(sequence_dir)])
+    """Launch the image sequence in an existing RV session via ``rvpush``.
+
+    This assumes ``rv`` is running with networking enabled (``rv -network``).
+    ``rvpush`` will send a play command so RV loads the sequence without
+    blocking this bot process.
+    """
+
+    seq_pattern = str(sequence_dir / "*.exr")
+    subprocess.Popen(["rvpush", "-play", seq_pattern])
 
 
 def _handle_message(event: Dict) -> Dict:
