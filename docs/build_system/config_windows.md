@@ -104,7 +104,42 @@
     C:\msys64\usr\bin
     C:\msys64\mingw64\bin
 
-9. [Build Open RV](build_windows_openrv)
+   Adjust if you installed MSYS2 to a different location.
+
+✅ 2. Add Qt5 and vcpkg to PATH
+If you're using Qt via vcpkg:
+
+Add your vcpkg triplet bin path:
+
+
+C:\vcpkg\installed\x64-windows\bin
+Qt DLLs like Qt5WebEngineCore.dll will be in this folder after qt5-webengine installs.
+
+✅ 3. Optional: Add CMake and Ninja if not already in PATH
+If vcpkg or MSYS2 installed their own, these should already be on path. Otherwise:
+
+Add to Path:
+
+C:\Program Files\CMake\bin
+C:\Program Files\ninja\
+✅ 4. Verify with PowerShell or CMD
+Open a new PowerShell or MSYS2 MinGW64 shell and run:
+
+
+which gcc
+which cmake
+which ninja
+which qmake
+You should see paths pointing to C:\msys64\mingw64\bin\...
+
+✅ 5. Set VCPKG_ROOT (Optional)
+Some tools benefit from this:
+
+Add Environment Variable:
+Variable Name	Value
+VCPKG_ROOT	C:\vcpkg
+
+10. [Build Open RV](build_windows_openrv)
 
 
 ````{warning}
