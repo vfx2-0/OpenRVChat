@@ -1,3 +1,5 @@
+"""Google Chat bot to upload image sequences to GCS and open them in OpenRV."""
+
 import os
 import re
 import subprocess
@@ -14,8 +16,11 @@ import google.auth
 from PIL import Image
 
 app = Flask(__name__)
+# Flask application used to receive events and serve the upload form
 
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "http://localhost:8080")
+# Base URL for the web server used in generated links
+# Optional Cloud Storage bucket for uploads
 UPLOAD_BUCKET = os.environ.get("UPLOAD_BUCKET")
 
 GCS_URL_RE = re.compile(r"^gs://([^/]+)/(.+)$")
@@ -27,6 +32,7 @@ OPENRV_INSTRUCTIONS = (
     "Then mention @OpenRV Bot in any chat to upload or view sequences."
 )
 
+# Extract bucket and object path from a gs:// URL
 
 def _parse_gcs_url(url: str):
     match = GCS_URL_RE.match(url)
@@ -34,6 +40,7 @@ def _parse_gcs_url(url: str):
         raise ValueError(f"Invalid GCS URL: {url}")
     return match.group(1), match.group(2)
 
+# Retrieve the list of available Google Chat spaces
 
 def _list_spaces() -> List[Dict[str, str]]:
     """Return available Google Chat spaces."""
@@ -46,6 +53,7 @@ def _list_spaces() -> List[Dict[str, str]]:
         for s in spaces
     ]
 
+# Send a plain text message to a Google Chat space
 
 def _post_message(space: str, text: str) -> Dict:
     creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/chat.bot"])
@@ -57,6 +65,7 @@ def _post_message(space: str, text: str) -> Dict:
 
 def _patch_message(name: str, text: str = None, card: Dict | None = None) -> None:
     """Update an existing message with new text or card."""
+# Edit an existing message to show progress or results
     creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/chat.bot"])
     service = build("chat", "v1", credentials=creds, cache_discovery=False)
     body: Dict[str, object] = {}
@@ -71,6 +80,7 @@ def _patch_message(name: str, text: str = None, card: Dict | None = None) -> Non
         return
     service.spaces().messages().patch(
         name=name, updateMask=",".join(mask_parts), body=body
+# Download all files under the given gs:// prefix to a local directory
     ).execute()
 
 
@@ -86,6 +96,7 @@ def _download_sequence(gcs_url: str, download_dir: Path) -> List[Path]:
         dest = download_dir / Path(blob.name).name
         blob.download_to_filename(dest.as_posix())
         paths.append(dest)
+# Grab the middle frame from a sequence for thumbnail generation
     return sorted(paths)
 
 
@@ -103,6 +114,7 @@ def _download_middle_frame(gcs_url: str, dest: Path) -> Path:
     return dest
 
 
+# Create a small preview image from a frame
 def _create_thumbnail(image_path: Path, thumb_path: Path) -> Path:
     """Create a 512x512 thumbnail. Supports common formats and EXR."""
     thumb_path.parent.mkdir(parents=True, exist_ok=True)
@@ -127,6 +139,7 @@ def _create_thumbnail(image_path: Path, thumb_path: Path) -> Path:
         except Exception as exc:
             raise RuntimeError(f"Failed to create thumbnail: {exc}") from exc
 
+# Store the thumbnail in Cloud Storage and generate a temporary URL
 
 def _upload_thumbnail(bucket_name: str, thumb_path: Path) -> str:
     """Upload a thumbnail to the given bucket and return a signed URL."""
@@ -137,6 +150,7 @@ def _upload_thumbnail(bucket_name: str, thumb_path: Path) -> str:
     return blob.generate_signed_url(expiration=datetime.timedelta(minutes=30))
 
 
+# Build a Google Chat card with thumbnails and action buttons
 def _upload_complete_card(urls: List[str], user: str) -> Dict:
     workspace = Path("/tmp/upload_thumbs")
     widgets = []
@@ -202,6 +216,7 @@ def _upload_complete_card(urls: List[str], user: str) -> Dict:
 
 
 @app.route("/upload_form")
+# Serve a simple HTML form for uploading sequences
 def upload_form():
     spaces = _list_spaces()
     options = "".join(
@@ -217,6 +232,7 @@ def upload_form():
 
 
 @app.route("/upload", methods=["POST"])
+# Handle sequence files uploaded from the form
 def upload():
     files = request.files.getlist("files")
     target_space = request.form.get("space")
@@ -265,6 +281,7 @@ def upload():
     return "Upload successful"
 
 
+# Push the sequence to an existing RV session via rvpush
 def _launch_openrv(sequence_dir: Path):
     """Launch the image sequence in an existing RV session via ``rvpush``.
 
@@ -277,6 +294,7 @@ def _launch_openrv(sequence_dir: Path):
     subprocess.Popen(["rvpush", "-play", seq_pattern])
 
 
+# Process text messages sent to the bot
 def _handle_message(event: Dict) -> Dict:
     event_type = event.get("type")
     if event_type == "ADDED_TO_SPACE":
@@ -376,6 +394,7 @@ def _handle_message(event: Dict) -> Dict:
     return card
 
 
+# Respond to button clicks from interactive cards
 def _handle_card_click(event: Dict) -> Dict:
     function = event.get("common", {}).get("invokedFunction")
     params = {
@@ -410,6 +429,7 @@ def _handle_card_click(event: Dict) -> Dict:
 
 
 @app.route("/chat", methods=["POST"])
+# Flask route that receives messages and card clicks from Google Chat
 def chat():
     data = request.json or {}
     event_type = data.get("type", "MESSAGE")
@@ -420,5 +440,6 @@ def chat():
     return jsonify(**resp), 200
 
 
+# Run the Flask development server when executed directly
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
