@@ -1,7 +1,7 @@
 # OpenRV Google Chat Bot
 
 This repository contains a small Python application that integrates
-[OpenRV](https://github.com/AcademySoftwareFoundation/OpenRV) with Google Chat.
+[OpenRV](https://drive.google.com/file/d/1SFsldpD9mWzKTm9tEKVhW-HwzB8tmC-8/view?usp=sharing)with Google Chat.
 The bot allows you to upload image sequences to Google Cloud Storage (GCS)
 and quickly open them in OpenRV from a chat room.
 
